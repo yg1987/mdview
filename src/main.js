@@ -101,7 +101,13 @@ document.body.addEventListener('drop', async (e) => {
   }
 
   try {
-    const content = await window.__TAURI__.invoke('read_md_file', {
+    // Tauri 2.x: __TAURI_INTERNALS__ 总是可用,__TAURI__ 需要 withGlobalTauri 配置
+    const invoke = window.__TAURI_INTERNALS__?.invoke;
+    if (!invoke) {
+      showError('Tauri IPC 不可用(仅 Tauri 环境支持)');
+      return;
+    }
+    const content = await invoke('read_md_file', {
       path: file.path
     });
     renderContent(content);
