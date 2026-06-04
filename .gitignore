@@ -19,3 +19,6 @@ Thumbs.db
 # Tauri
 src-tauri/target/
 src-tauri/gen/
+
+# OpenCode runtime state
+.omo/
