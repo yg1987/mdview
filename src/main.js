@@ -100,21 +100,23 @@ document.body.addEventListener('drop', async (e) => {
     showError(`文件较大 (${(file.size / 1024 / 1024).toFixed(1)} MB),渲染可能较慢`);
   }
 
+  // 用 FileReader 读文件(无需 Tauri IPC,跟 preview.html 一致)
   try {
-    // Tauri 2.x: __TAURI_INTERNALS__ 总是可用,__TAURI__ 需要 withGlobalTauri 配置
-    const invoke = window.__TAURI_INTERNALS__?.invoke;
-    if (!invoke) {
-      showError('Tauri IPC 不可用(仅 Tauri 环境支持)');
-      return;
-    }
-    const content = await invoke('read_md_file', {
-      path: file.path
-    });
+    const content = await readFileAsText(file);
     renderContent(content);
   } catch (err) {
-    showError(humanizeError(err));
+    showError(`读取失败: ${err.message || err}`);
   }
 });
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(reader.error?.message || '文件读取失败'));
+    reader.readAsText(file, 'UTF-8');
+  });
+}
 
 // ===== 4. 渲染流水线 =====
 
@@ -194,20 +196,6 @@ function showError(msg) {
 
 function hideError() {
   document.getElementById('error').style.display = 'none';
-}
-
-function humanizeError(err) {
-  let msg = String(err);
-  if (msg.includes('系统找不到指定的文件') || msg.includes('No such file')) {
-    return '文件不存在或已被移动';
-  }
-  if (msg.includes('拒绝访问') || msg.includes('Permission denied')) {
-    return '没有读取该文件的权限';
-  }
-  if (msg.includes('目录') || msg.includes('Is a directory')) {
-    return '请拖入文件,而不是文件夹';
-  }
-  return `读取失败: ${msg}`;
 }
 
 // ===== 6. 工具函数 =====
