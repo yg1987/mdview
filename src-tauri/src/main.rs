@@ -1,5 +1,3 @@
-use tauri::Manager;
-
 #[tauri::command]
 fn read_md_file(path: String) -> Result<String, String> {
     std::fs::read_to_string(&path)
